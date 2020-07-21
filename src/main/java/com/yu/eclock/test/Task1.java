@@ -11,7 +11,7 @@ public class Task1 extends DefaultTask<Map<String,Integer>> {
     }
 
     @Override
-    protected void go(Map<String, Integer> data) {
+    protected void execute(Map<String, Integer> data) {
         if(data.size() > 0){
             Integer key = data.get("key");
             data.put("key",key + 1);

@@ -11,7 +11,7 @@ public class Task extends LoopTask<String> {
 
     // do something
     @Override
-    protected void go(String data) {
+    protected void execute(String data) {
         System.out.println("任务 " + getTaskName() +"执行了");
     }
 

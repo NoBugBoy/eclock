@@ -58,7 +58,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
     public final boolean isStartedUp() { return startedUp; }
     public final int getSeconds() { return seconds; }
 
-    protected abstract void go(T data);
+    protected abstract void execute(T data);
     protected synchronized void setSlotAndRounds(int slot , int rounds) {
         this.slot = slot;
         this.rounds = rounds;
@@ -97,7 +97,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
         LOGGER.debug("begin run task ...");
         long beginTimeMillis = System.currentTimeMillis();
         try{
-            go(data);
+            execute(data);
         }catch (Exception e){
             exception = true;
             exceptionCallBack(e,count.get());

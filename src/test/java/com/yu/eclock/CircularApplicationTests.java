@@ -1,21 +1,33 @@
 package com.yu.eclock;
 
-import com.yu.eclock.core.AbstractTask;
-import com.yu.eclock.test.Task;
-import com.yu.eclock.core.TimeWheel;
+import com.mongodb.client.MongoDatabase;
+import com.yu.eclock.test.Task1;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
-import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
-// @SpringBootTest
+@SpringBootTest
 class CircularApplicationTests {
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    @Test
+    public void test(){
+        MongoDatabase db = mongoTemplate.getDb();
+        System.out.println(db.getName());
+        Task1 task = new Task1(null,"12312312312312312",1);
+        Map<String, Integer> taskData = task.getTaskData();
+        mongoTemplate.save(task,"12312312312312312");
+
+        // BasicDBObject basicDBObject = new BasicDBObject();
+        // basicDBObject.put("taskName","12312312312312312");
+        // Query q = new BasicQuery(basicDBObject.toJson());
+        // Task1 one = mongoTemplate.findOne(q, Task1.class);
+        // System.out.println(one);
+    }
     // @Autowired
     // TimeWheel timeWheel;
     // @Autowired

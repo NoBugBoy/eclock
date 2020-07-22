@@ -1,7 +1,5 @@
 package com.yu.eclock.persistence;
 
-public interface EclockPersistenceFactory {
-     boolean init();
-     boolean add();
-     boolean remove();
+public interface EclockPersistenceFactory<R> {
+    R getTemplate();
 }

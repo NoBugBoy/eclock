@@ -4,6 +4,7 @@ import com.yu.eclock.core.PrintBanner;
 import com.yu.eclock.core.TimeWheel;
 import com.yu.eclock.core.TimeWheelStartHandler;
 import com.yu.eclock.listener.StartedUpTaskHandler;
+import com.yu.eclock.persistence.mongo.MongoPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -12,8 +13,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.Optional;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +63,7 @@ public class TimeWheelConfig {
     public TimeWheelStartHandler timeWheelStartHandler(){
         PrintBanner.print();
         final TimeWheelStartHandler timeWheelStartHandler = new TimeWheelStartHandler(timeWheel(),wheelPoll(),timeWheelStartConfig);
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 10, TimeUnit.SECONDS, new SynchronousQueue<>(),
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS, new SynchronousQueue<>(),
             r -> {
                 Thread t= new Thread(r);
                 // if you want debug this project please set Daemon false
@@ -72,6 +75,13 @@ public class TimeWheelConfig {
         LOGGER.info("eternal-clock started ...");
         return timeWheelStartHandler;
     }
-
+    //-------
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "eternal.clock.persistence", value = "name", havingValue = "mongo")
+    public MongoTemplate mongoPersistence(){
+        MongoPersistence mongoPersistence = new MongoPersistence(timeWheelStartConfig.getPersistence().getUrl());
+        return mongoPersistence.getTemplate();
+    }
 
 }

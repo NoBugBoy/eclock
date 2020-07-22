@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class TimeWheelStartConfig {
     private volatile boolean enabled;
     private Threads threads;
+    private Persistence persistence;
 
     public static class Threads{
         Threads(){}
@@ -38,6 +39,27 @@ public class TimeWheelStartConfig {
             this.keepAliveSeconds = keepAliveSeconds;
         }
     }
+    public static class Persistence{
+        Persistence(){}
+        private String name;
+        private String url;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+    }
 
     public boolean isEnabled() {
         return enabled;
@@ -52,5 +74,13 @@ public class TimeWheelStartConfig {
 
     public Threads getThreads() {
         return threads;
+    }
+
+    public Persistence getPersistence() {
+        return persistence;
+    }
+
+    public void setPersistence(Persistence persistence) {
+        this.persistence = persistence;
     }
 }

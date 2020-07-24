@@ -3,7 +3,6 @@ package com.yu.eclock.core;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class LoopTask<T> extends AbstractTask<T> implements TimeWheelLoopTask{
-    private TimeWheel timeWheel;
     public LoopTask(TimeWheel timeWheel,String taskName,int seconds,boolean rollback) {
         super(timeWheel, taskName,seconds,rollback,true);
 

@@ -4,19 +4,17 @@ import com.yu.eclock.core.PrintBanner;
 import com.yu.eclock.core.TimeWheel;
 import com.yu.eclock.core.TimeWheelStartHandler;
 import com.yu.eclock.listener.StartedUpTaskHandler;
-import com.yu.eclock.persistence.mongo.MongoPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.Optional;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnClass({TimeWheelStartConfig.class})
 @EnableConfigurationProperties(TimeWheelStartConfig.class)
 public class TimeWheelConfig {
+    @Value("${version}")
+    private String version;
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeWheelConfig.class);
     private final  TimeWheelStartConfig timeWheelStartConfig;
 
@@ -36,7 +36,7 @@ public class TimeWheelConfig {
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
     public TimeWheel timeWheel(){
-        return new TimeWheel(false);
+        return new TimeWheel(false,timeWheelStartConfig.getPersistence().isEnabled(),timeWheelStartConfig.getPersistence().getName());
     }
 
     @Bean(name = "eclock-pool")
@@ -61,7 +61,7 @@ public class TimeWheelConfig {
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
     @Bean
     public TimeWheelStartHandler timeWheelStartHandler(){
-        PrintBanner.print();
+        PrintBanner.print(version);
         final TimeWheelStartHandler timeWheelStartHandler = new TimeWheelStartHandler(timeWheel(),wheelPoll(),timeWheelStartConfig);
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS, new SynchronousQueue<>(),
             r -> {
@@ -76,12 +76,12 @@ public class TimeWheelConfig {
         return timeWheelStartHandler;
     }
     //-------
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "eternal.clock.persistence", value = "name", havingValue = "mongo")
-    public MongoTemplate mongoPersistence(){
-        MongoPersistence mongoPersistence = new MongoPersistence(timeWheelStartConfig.getPersistence().getUrl());
-        return mongoPersistence.getTemplate();
-    }
+    // @Bean
+    // @ConditionalOnMissingBean
+    // @ConditionalOnProperty(prefix = "eternal.clock.persistence", value = "name", havingValue = "mongo")
+    // public MongoTemplate mongoPersistence(){
+    //     MongoPersistence mongoPersistence = new MongoPersistence(timeWheelStartConfig.getPersistence().getDbUrl(),timeWheelStartConfig.getPersistence().getDbName());
+    //     return mongoPersistence.getTemplate();
+    // }
 
 }

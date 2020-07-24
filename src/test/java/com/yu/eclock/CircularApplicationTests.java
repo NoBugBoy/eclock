@@ -1,13 +1,15 @@
 package com.yu.eclock;
 
-import com.mongodb.client.MongoDatabase;
-import com.yu.eclock.test.Task1;
+import com.mongodb.client.result.DeleteResult;
+import com.yu.eclock.persistence.DataModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
-import java.util.Map;
+import java.util.List;
 
 @SpringBootTest
 class CircularApplicationTests {
@@ -16,12 +18,15 @@ class CircularApplicationTests {
 
     @Test
     public void test(){
-        MongoDatabase db = mongoTemplate.getDb();
-        System.out.println(db.getName());
-        Task1 task = new Task1(null,"12312312312312312",1);
-        Map<String, Integer> taskData = task.getTaskData();
-        mongoTemplate.save(task,"12312312312312312");
-
+        DataModel dataModel = new DataModel();
+        dataModel.setSlot(2);
+        mongoTemplate.save(dataModel);
+        List<DataModel> all = mongoTemplate.findAll(DataModel.class);
+        all.stream().forEach(System.out::println);
+        DeleteResult slot = mongoTemplate.remove(new Query(Criteria.where("slot").gt(0)), DataModel.class);
+        System.out.println(slot.getDeletedCount());
+        List<DataModel> all1 = mongoTemplate.findAll(DataModel.class);
+        all1.stream().forEach(System.out::println);
         // BasicDBObject basicDBObject = new BasicDBObject();
         // basicDBObject.put("taskName","12312312312312312");
         // Query q = new BasicQuery(basicDBObject.toJson());

@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.yu</groupId>
     <artifactId>eclock</artifactId>
-    <version>0.0.2-BATA</version>
+    <version>0.0.3-BATA</version>
     <packaging>jar</packaging>
     <description>时间轮定时任务</description>
 

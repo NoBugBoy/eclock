@@ -41,8 +41,10 @@ public class TimeWheelStartConfig {
     }
     public static class Persistence{
         Persistence(){}
-        private String name;
-        private String url;
+        private boolean enabled = false;
+        private String name = "mongo";
+        private String dbName = "eclock";
+        private String dbUrl = "mongodb://localhost:27017";
 
         public String getName() {
             return name;
@@ -52,12 +54,28 @@ public class TimeWheelStartConfig {
             this.name = name;
         }
 
-        public String getUrl() {
-            return url;
+        public String getDbName() {
+            return dbName;
         }
 
-        public void setUrl(String url) {
-            this.url = url;
+        public void setDbName(String dbName) {
+            this.dbName = dbName;
+        }
+
+        public String getDbUrl() {
+            return dbUrl;
+        }
+
+        public void setDbUrl(String dbUrl) {
+            this.dbUrl = dbUrl;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
     }
 

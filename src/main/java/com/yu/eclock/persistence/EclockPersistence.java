@@ -1,5 +1,5 @@
 package com.yu.eclock.persistence;
 
-public interface EclockPersistenceFactory<R> {
+public interface EclockPersistence<R> {
     R getTemplate();
 }

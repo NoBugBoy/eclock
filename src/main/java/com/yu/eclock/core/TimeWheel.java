@@ -1,5 +1,10 @@
 package com.yu.eclock.core;
 
+import com.yu.eclock.exception.PersistenceNameException;
+import com.yu.eclock.persistence.DataModel;
+import com.yu.eclock.persistence.Persistence;
+import com.yu.eclock.persistence.PersistenceFactory;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +21,16 @@ public class TimeWheel {
     private final int timeSlot = 3600;
     private final CopyOnWriteArraySet<AbstractTask<?>>[] tasks;
     private final boolean lazyInit;
+    private final boolean persistence;
+    private final String persistenceName;
     private final AtomicInteger currentSlot = new AtomicInteger(0) ;
     private final ReentrantLock al = new ReentrantLock();
     private final ReentrantLock rl = new ReentrantLock();
-    public TimeWheel(boolean lazyInit){
+    public TimeWheel(boolean lazyInit,boolean persistence,String persistenceName){
         tasks = new CopyOnWriteArraySet[timeSlot];
         this.lazyInit = lazyInit;
+        this.persistence = persistence;
+        this.persistenceName = persistenceName;
         if(!lazyInit){
             init();
         }
@@ -40,6 +49,12 @@ public class TimeWheel {
     public boolean isLazyInit(){ return lazyInit; }
 
     /**
+     * 是否持久化任务
+     * @return boolean persistence
+     */
+    public boolean isPersistence() { return persistence; }
+
+    /**
      * @return 获取当前solt中所有的任务
      */
     public Set<AbstractTask<?>> getTaskBySlotPoint(){ return this.tasks[currentSlot.get() - 1]; }
@@ -48,22 +63,24 @@ public class TimeWheel {
      * 添加一个任务到轮盘，下次执行的时间由当前slot指针控制
      * 如果超过轮盘最大周期3600，则计算下次执行圈次
      * @param task 执行的自定义任务
-     * @return 添加是否成功
      */
-    public final boolean addTask(AbstractTask<?> task){
+    public final void addTask(AbstractTask<?> task){
         int seconds = task.getSeconds();
-        if(seconds < 0 || task.isDone()) return false;
+        if(seconds < 0 || task.isDone()) return;
         try {
             al.lock();
             int slot = currentSlot.get() + seconds;
             if(slot > timeSlot){
-                slot = (currentSlot.get() + seconds) % timeSlot;
-                int rounds = (currentSlot.get() + seconds) / timeSlot ;
+                slot = slot % timeSlot;
+                int rounds = slot / timeSlot ;
                 if (lazyInit) lazyInit(slot);
                 task.setSlotAndRounds(slot,rounds);
             }else{
                 if (lazyInit) lazyInit(slot);
                 task.setSlotAndRounds( slot,1);
+            }
+            if(persistence){
+                persistenceAdd(task);
             }
             this.tasks[slot].add(task);
             // LOGGER.info("add task {} successful ...",task.getTaskName());
@@ -74,9 +91,18 @@ public class TimeWheel {
             al.unlock();
         }
 
-        return true;
     }
-
+    public void persistenceAdd(AbstractTask<?> task){
+        if(Strings.isBlank(persistenceName)){
+            throw new PersistenceNameException("persistence name can not be null or '' ");
+        }
+        Persistence persistence = PersistenceFactory.getPersistence(persistenceName);
+        if(persistence == null){
+            throw new PersistenceNameException("persistence can not be null ..");
+        }
+        DataModel convert = task.convert();
+        persistence.add(convert);
+    }
     /**
      * 移动slot指针，超过最大周期，将从头执行
      * 首尾相连
@@ -103,9 +129,8 @@ public class TimeWheel {
      * 移除已经done掉的task
      * @param slot 当前位置
      * @param task 任务对象
-     * @return 是否成功移除任务
      */
-    public boolean removeTask(int slot , AbstractTask<?> task){
+    public void removeTask(int slot , AbstractTask<?> task){
         try{
             rl.lock();
             if(null == task){
@@ -122,27 +147,34 @@ public class TimeWheel {
         }catch (Exception e){
             LOGGER.error("remove task exception {}",e.getMessage());
             e.printStackTrace();
-            return false;
         }finally {
             rl.unlock();
         }
-        return true;
     }
 
     /**
      * 删除当前任务
-     * @param slot
-     * @param task
+     * @param slot 位置
+     * @param task 任务对象
      */
     public void removeCurrentTask(int slot,AbstractTask<?> task){
+        if(persistence){
+            if(Strings.isBlank(persistenceName)){
+                throw new PersistenceNameException("persistence name can not be null or '' ");
+            }
+            Persistence persistence = PersistenceFactory.getPersistence(persistenceName);
+            assert persistence != null;
+            persistence.remove(task.getId());
             LOGGER.info("移除{}位置上的任务 >>>>> {}",slot,task.getTaskName());
+        }
             this.tasks[slot].remove(task);
+
     }
 
     /**
      * 默认初始化
      */
-    private void init(){
+    private synchronized void init(){
         for (int i = 0; i < tasks.length; i++) {
             tasks[i] = new CopyOnWriteArraySet<>();
         }

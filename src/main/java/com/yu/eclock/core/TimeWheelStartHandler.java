@@ -50,7 +50,7 @@ public class TimeWheelStartHandler implements Runnable{
             }
             // clear(timeWheel,taskBySlotPoint);
             try {
-                TimeUnit.MILLISECONDS.sleep(10);
+                TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

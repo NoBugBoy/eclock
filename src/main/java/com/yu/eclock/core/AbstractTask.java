@@ -3,15 +3,18 @@ package com.yu.eclock.core;
 import com.yu.eclock.exception.DataNullException;
 import com.yu.eclock.exception.TaskDoneException;
 import com.yu.eclock.exception.TaskExcitingException;
+import com.yu.eclock.persistence.TaskDataConvert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
+public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataConvert<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTask.class);
+    private final String uuid;
     private volatile T data;
     private boolean rollback;
     private volatile boolean exception;
@@ -31,6 +34,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
         this.rollback = rollback;
         this.exception = false;
         this.done = false;
+        this.uuid = UUID.randomUUID().toString().replace("-","");
         //lazy load
         if(rollback){ this.retryCount = new AtomicInteger(0); }
         this.count = new AtomicInteger(0);
@@ -41,11 +45,17 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
 
     }
 
+    public String getId() { return uuid; }
     public final T getTaskData(){ return this.data; }
     public final void setTaskData(T data){ this.data = data; }
     public final String getTaskName() { return taskName; }
     public final boolean isDone(){ return this.done; }
     public final void setRollback(boolean rollback) { this.rollback = rollback; }
+    public boolean isRollback() { return rollback; }
+    public AtomicInteger getRetryCount() { return retryCount; }
+    public int getSlot() { return slot; }
+    public int getRounds() { return rounds; }
+
     public final void setRetryCount(int retryCount) {
         if(rollback){
             if (this.retryCount == null){
@@ -164,9 +174,6 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>{
                 }
             }
         }
-    }
-    public final void stop(){
-        this.done = true;
     }
 
     private void reAddTask(){

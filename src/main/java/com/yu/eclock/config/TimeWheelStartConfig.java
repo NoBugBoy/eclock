@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "eternal.clock")
 public class TimeWheelStartConfig {
-    private volatile boolean enabled;
+    private volatile boolean enabled = false;
     private Threads threads;
     private Persistence persistence;
 

@@ -1,6 +1,8 @@
 package com.yu.eclock.persistence.mongo;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClientFactory;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.result.DeleteResult;
 import com.yu.eclock.core.AbstractTask;
@@ -34,7 +36,7 @@ public class MongoPersistence implements EclockPersistence<MongoTemplate>, Persi
     public boolean add(DataModel model) {
         try {
             if(model == null){
-                LOGGER.error("convert model is null");
+                // LOGGER.error("convert model is null");
                 return false;
             }
             mongoTemplate.insert(model);
@@ -53,7 +55,7 @@ public class MongoPersistence implements EclockPersistence<MongoTemplate>, Persi
 
     @Override
     public boolean remove(String key) {
-        DeleteResult id = mongoTemplate.remove(new Query(Criteria.where("taskId").is(key)), AbstractTask.class);
+        DeleteResult id = mongoTemplate.remove(new Query(Criteria.where("taskId").is(key)), DataModel.class);
         return id.getDeletedCount() > 0;
     }
 }

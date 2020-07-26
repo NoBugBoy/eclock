@@ -9,12 +9,15 @@ public interface TaskDataConvert<T> {
             DataModel dataModel = new DataModel();
             dataModel.setTimestamp(System.currentTimeMillis());
             dataModel.setData(defaultTask.getTaskData());
+            dataModel.setSeconds(defaultTask.getSeconds());
+            dataModel.setTaskName(defaultTask.getTaskName());
             dataModel.setLoopTask(false);
             dataModel.setRetryCount(defaultTask.getRetryCount()==null? 0 : defaultTask.getRetryCount().intValue());
             dataModel.setRollback(defaultTask.isRollback());
             dataModel.setSlot(defaultTask.getSlot());
             dataModel.setRounds(defaultTask.getRounds());
             dataModel.setTaskId(defaultTask.getId());
+            dataModel.setClazz(this.getClass().getName());
             return dataModel;
         }else{
             return null;

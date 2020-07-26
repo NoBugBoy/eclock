@@ -1,5 +1,6 @@
 package com.yu.eclock.core;
 
+import com.yu.eclock.exception.FixTaskException;
 import com.yu.eclock.exception.PersistenceNameException;
 import com.yu.eclock.persistence.DataModel;
 import com.yu.eclock.persistence.Persistence;
@@ -8,6 +9,9 @@ import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,6 +96,66 @@ public class TimeWheel {
         }
 
     }
+    public final void addAndFixTask(DataModel dataModel,long startTime){
+        long timestamp = dataModel.getTimestamp();
+        int  rounds    = dataModel.getRounds();
+        long time;
+        if(rounds > 1){
+            time = dataModel.getSeconds() + ((rounds - 1) * 3600) + (startTime / 1000);
+        }else{
+            time = dataModel.getSeconds() + (timestamp / 1000) ;
+        }
+        if(((startTime - timestamp) / 1000) <= time ){
+            //直接恢复
+            String clazz = dataModel.getClazz();
+            if(Strings.isBlank(clazz)){
+                return;
+            }
+            AbstractTask<?> task = buildClass(dataModel);
+            if (task  == null) throw new FixTaskException("Resume task exception");
+            Persistence persistence = PersistenceFactory.getPersistence(persistenceName);
+            assert persistence != null;
+            persistence.remove(task.getId());
+            addTask(task);
+            // addTask();
+        }else {
+            //判断是否需要重新加入
+            LOGGER.info(dataModel.getTaskId() + "已经过期");
+        }
+    }
+    private AbstractTask<?> buildClass(DataModel dataModel){
+        try {
+            Class<?> aClass = Class.forName(dataModel.getClazz());
+            Constructor<?>[] constructors = aClass.getConstructors();
+            for (Constructor<?> constructor : constructors) {
+                if(constructor.getParameterCount() == 3){
+                    AbstractTask<?> task = (AbstractTask<?>)constructor.newInstance(this, dataModel.getTaskName(),
+                        dataModel.getSeconds());
+                    Class<?> superclass = aClass.getSuperclass().getSuperclass();
+                    Field data = superclass.getDeclaredField("data");
+                    Field    uuid       = superclass.getDeclaredField("uuid");
+                    data.setAccessible(true);
+                    data.set(task,dataModel.getData());
+                    uuid.setAccessible(true);
+                    uuid.set(task,dataModel.getTaskId());
+                    task.setRollback(dataModel.isRollback());
+                    task.setRetryCount(dataModel.getRetryCount());
+                    return task;
+                }
+            }
+            return null;
+            // Class<?>[] argsClass = new Class[3];
+            // argsClass[0] = this.getClass();
+            // argsClass[1] = String.class;
+            // argsClass[2] = Integer.class;
+            // Constructor<?> constructor = aClass.getConstructor(argsClass);
+            // return (AbstractTask<?>)constructor.newInstance(this, dataModel.getTaskName(), dataModel.getSeconds());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchFieldException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public void persistenceAdd(AbstractTask<?> task){
         if(Strings.isBlank(persistenceName)){
             throw new PersistenceNameException("persistence name can not be null or '' ");
@@ -167,7 +231,7 @@ public class TimeWheel {
             persistence.remove(task.getId());
             LOGGER.info("移除{}位置上的任务 >>>>> {}",slot,task.getTaskName());
         }
-            this.tasks[slot].remove(task);
+        this.tasks[slot].remove(task);
 
     }
 

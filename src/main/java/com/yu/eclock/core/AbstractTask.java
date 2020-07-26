@@ -29,8 +29,20 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
     private final boolean isLoopTask;
     private volatile int slot;
     private volatile int rounds;
-
-    public AbstractTask(TimeWheel timeWheel,String taskName,int seconds,boolean rollback,boolean isLoopTask){
+    public AbstractTask(){
+        this.rollback = false;
+        this.exception = false;
+        this.done = false;
+        this.uuid = UUID.randomUUID().toString().replace("-","");
+        //lazy load
+        if(rollback){ this.retryCount = new AtomicInteger(0); }
+        this.count = new AtomicInteger(0);
+        this.timeWheel = null;
+        this.seconds = 0;
+        this.taskName = null;
+        this.isLoopTask = false;
+    }
+    public AbstractTask(TimeWheel timeWheel,String taskName,int seconds,T data,boolean rollback,boolean isLoopTask){
         this.rollback = rollback;
         this.exception = false;
         this.done = false;
@@ -42,9 +54,9 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
         this.seconds = seconds;
         this.taskName = taskName;
         this.isLoopTask = isLoopTask;
+        this.data = data;
 
     }
-
     public String getId() { return uuid; }
     public final T getTaskData(){ return this.data; }
     public final void setTaskData(T data){ this.data = data; }

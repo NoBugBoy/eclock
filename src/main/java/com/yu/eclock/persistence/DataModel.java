@@ -13,6 +13,15 @@ public class DataModel implements Serializable {
     private String taskName;
     private boolean rollback;
     private int retryCount;
+    private String clazz;
+
+    public String getClazz() {
+        return clazz;
+    }
+
+    public void setClazz(String clazz) {
+        this.clazz = clazz;
+    }
 
     public String getTaskId() {
         return taskId;

@@ -13,7 +13,7 @@ public class CircularApplication {
         ConfigurableApplicationContext run = SpringApplication.run(CircularApplication.class, args);
         TimeWheel bean = run.getBean(TimeWheel.class);
         for (int i = 0; i < 10; i++) {
-            Task1 task = new Task1(bean,"test"+i,20+i);
+            Task1 task = new Task1(bean,"test"+i,10+(i * 10));
             task.setTaskData("1231231");
             task.joinTimeWheel();
         }

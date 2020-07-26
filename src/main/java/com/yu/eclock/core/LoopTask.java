@@ -3,14 +3,18 @@ package com.yu.eclock.core;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class LoopTask<T> extends AbstractTask<T> implements TimeWheelLoopTask{
-    public LoopTask(TimeWheel timeWheel,String taskName,int seconds,boolean rollback) {
-        super(timeWheel, taskName,seconds,rollback,true);
+    public LoopTask(){}
+    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds) {
+        super(timeWheel,taskName,seconds,null,false,true);
+    }
+    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds,T data) {
+        super(timeWheel,taskName,seconds,data,false,true);
 
     }
-    public LoopTask(TimeWheel timeWheel,String taskName,int seconds) {
-        super(timeWheel,taskName,seconds,false,true);
-
+    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds,T data ,boolean rollback) {
+        super(timeWheel, taskName,seconds,data,rollback,true);
     }
+
     // -1 无限 默认为1
     private final AtomicInteger loopCount  = new AtomicInteger(1);
     //是否开启循环

@@ -7,6 +7,6 @@ public class PrintBanner {
         System.out.println("|  _|| |   | |  | | | | |   | ' / ");
         System.out.println("| |__| |___| |__| |_| | |___| . \\ ");
         System.out.println("|_____\\____|_____\\___/ \\____|_|\\_\\");
-        System.out.println("                    version "+version);
+        System.out.println("                    v"+version);
     }
 }

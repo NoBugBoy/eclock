@@ -21,9 +21,9 @@ public class Task1 extends DefaultTask<String> {
 
     @Override
     public void completeCallBack(String data, long timeMillis, int count) {
-        System.out.println(count);
-        this.unLock();
-        this.joinTimeWheel();
+        // System.out.println(count);
+        // this.unLock();
+        // this.joinTimeWheel();
     }
 
     @Override

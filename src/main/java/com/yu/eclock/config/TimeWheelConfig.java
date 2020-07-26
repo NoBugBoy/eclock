@@ -36,7 +36,7 @@ public class TimeWheelConfig {
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
     public TimeWheel timeWheel(){
-        return new TimeWheel(false,timeWheelStartConfig.getPersistence().isEnabled(),timeWheelStartConfig.getPersistence().getName());
+        return new TimeWheel(false,timeWheelStartConfig);
     }
 
     @Bean(name = "eclock-pool")

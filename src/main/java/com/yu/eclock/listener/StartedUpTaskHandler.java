@@ -39,7 +39,9 @@ public class StartedUpTaskHandler implements ApplicationListener<ApplicationStar
             List<DataModel> dataModels = persistence.get();
             LOGGER.info("fix not done task ...");
             final long appStartTime = System.currentTimeMillis();
-            dataModels.parallelStream().filter(dataModel -> Strings.isNotBlank(dataModel.getClazz())).forEach(dataModel -> timeWheel.addAndFixTask(dataModel,appStartTime));
+            dataModels.parallelStream()
+                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
+                .forEach(dataModel -> timeWheel.addAndFixTask(dataModel,appStartTime));
             // if(beanNamesForType.length > 0){
             //     LOGGER.debug("The automatic tasks:");
             //     for (String s : beanNamesForType) {

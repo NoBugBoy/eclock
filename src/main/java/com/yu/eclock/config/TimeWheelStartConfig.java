@@ -45,6 +45,15 @@ public class TimeWheelStartConfig {
         private String name = "mongo";
         private String dbName = "eclock";
         private String dbUrl = "mongodb://localhost:27017";
+        private String strategy = "discard";
+
+        public String getStrategy() {
+            return strategy;
+        }
+
+        public void setStrategy(String strategy) {
+            this.strategy = strategy;
+        }
 
         public String getName() {
             return name;

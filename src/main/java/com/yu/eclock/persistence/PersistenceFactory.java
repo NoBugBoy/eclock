@@ -62,7 +62,7 @@ public class PersistenceFactory {
                 return mongoPersistence;
             }
         }
-        return null;
+        throw new PersistenceNameException("not found persistence name\"+ name");
     }
 
 }

@@ -6,6 +6,7 @@ import com.mongodb.client.MongoClientFactory;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.result.DeleteResult;
 import com.yu.eclock.core.AbstractTask;
+import com.yu.eclock.exception.PersistenceInstanceException;
 import com.yu.eclock.persistence.DataModel;
 import com.yu.eclock.persistence.EclockPersistence;
 import com.yu.eclock.persistence.Persistence;
@@ -55,6 +56,7 @@ public class MongoPersistence implements EclockPersistence<MongoTemplate>, Persi
 
     @Override
     public boolean remove(String key) {
+        if (mongoTemplate == null) throw new PersistenceInstanceException("mongoClient instance exception");
         DeleteResult id = mongoTemplate.remove(new Query(Criteria.where("taskId").is(key)), DataModel.class);
         return id.getDeletedCount() > 0;
     }

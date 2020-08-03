@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.yu</groupId>
     <artifactId>eclock</artifactId>
-    <version>0.0.3-BATA</version>
+    <version>0.0.4-BATA</version>
     <packaging>jar</packaging>
     <description>时间轮定时任务</description>
 
@@ -26,6 +26,15 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.11.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

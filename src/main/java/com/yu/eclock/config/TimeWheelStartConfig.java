@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class TimeWheelStartConfig {
     private volatile boolean enabled = false;
     private Threads threads;
-    private Persistence persistence;
+    private Persistence persistence = new Persistence();
 
     public static class Threads{
         Threads(){}
@@ -39,21 +39,13 @@ public class TimeWheelStartConfig {
             this.keepAliveSeconds = keepAliveSeconds;
         }
     }
-    public static class Persistence{
-        Persistence(){}
-        private boolean enabled = false;
-        private String name = "mongo";
-        private String dbName = "eclock";
-        private String dbUrl = "mongodb://localhost:27017";
+    public static class Redis{
+        private String name = "redis";
+        private String dbName = "0";
+        private String dbUrl = "localhost";
+        private String port = "6379";
+        private String password = "";
         private String strategy = "discard";
-
-        public String getStrategy() {
-            return strategy;
-        }
-
-        public void setStrategy(String strategy) {
-            this.strategy = strategy;
-        }
 
         public String getName() {
             return name;
@@ -77,6 +69,89 @@ public class TimeWheelStartConfig {
 
         public void setDbUrl(String dbUrl) {
             this.dbUrl = dbUrl;
+        }
+
+        public String getPort() {
+            return port;
+        }
+
+        public void setPort(String port) {
+            this.port = port;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getStrategy() {
+            return strategy;
+        }
+
+        public void setStrategy(String strategy) {
+            this.strategy = strategy;
+        }
+    }
+    public static class Mongo{
+        private String name = "mongo";
+        private String dbUrl = "mongodb://localhost:27017";
+        private String strategy = "discard";
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDbUrl() {
+            return dbUrl;
+        }
+
+        public void setDbUrl(String dbUrl) {
+            this.dbUrl = dbUrl;
+        }
+
+        public String getStrategy() {
+            return strategy;
+        }
+
+        public void setStrategy(String strategy) {
+            this.strategy = strategy;
+        }
+    }
+    public static class Persistence{
+        Persistence(){}
+        private boolean enabled = false;
+        private String typeName = "mongo";
+        private Mongo mongo = new Mongo();
+        private Redis redis = new Redis();
+        public Mongo getMongo() {
+            return mongo;
+        }
+
+        public void setMongo(Mongo mongo) {
+            this.mongo = mongo;
+        }
+
+        public Redis getRedis() {
+            return redis;
+        }
+
+        public void setRedis(Redis redis) {
+            this.redis = redis;
+        }
+
+        public String getTypeName() {
+            return typeName;
+        }
+
+        public void setTypeName(String typeName) {
+            this.typeName = typeName;
         }
 
         public boolean isEnabled() {

@@ -4,6 +4,7 @@ import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClientFactory;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import com.yu.eclock.core.AbstractTask;
 import com.yu.eclock.exception.PersistenceInstanceException;
@@ -12,6 +13,7 @@ import com.yu.eclock.persistence.EclockPersistence;
 import com.yu.eclock.persistence.Persistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -22,9 +24,9 @@ import java.util.List;
 public class MongoPersistence implements EclockPersistence<MongoTemplate>, Persistence {
     private final static Logger        LOGGER = LoggerFactory.getLogger(MongoPersistence.class);
     private final        MongoTemplate mongoTemplate;
-    public MongoPersistence(String dbString,String dbName){
-        MongoClient mongoClient = MongoClients.create(dbString);
-        SimpleMongoClientDbFactory simpleMongoClientDbFactory = new SimpleMongoClientDbFactory(mongoClient,dbName);
+    public MongoPersistence(String dbString){
+        // MongoClient mongoClient = MongoClients.create(dbString);
+        SimpleMongoClientDbFactory simpleMongoClientDbFactory = new SimpleMongoClientDbFactory(dbString);
         this.mongoTemplate = new MongoTemplate(simpleMongoClientDbFactory);
     }
 

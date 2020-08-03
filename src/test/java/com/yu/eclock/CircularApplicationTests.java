@@ -1,37 +1,68 @@
 package com.yu.eclock;
 
-import com.mongodb.client.result.DeleteResult;
-import com.yu.eclock.persistence.DataModel;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 
-import java.util.List;
-
-@SpringBootTest
+// @SpringBootTest
 class CircularApplicationTests {
-    @Autowired
-    private MongoTemplate mongoTemplate;
+//     // @Autowired
+//     // private MongoTemplate mongoTemplate;
 
+    // @Test
+    // public void test(){
+    //     DataModel dataModel = new DataModel();
+    //     dataModel.setSlot(2);
+    //     mongoTemplate.save(dataModel);
+    //     List<DataModel> all = mongoTemplate.findAll(DataModel.class);
+    //     all.stream().forEach(System.out::println);
+    //     DeleteResult slot = mongoTemplate.remove(new Query(Criteria.where("slot").gt(0)), DataModel.class);
+    //     System.out.println(slot.getDeletedCount());
+    //     List<DataModel> all1 = mongoTemplate.findAll(DataModel.class);
+    //     all1.stream().forEach(System.out::println);
+    //     // BasicDBObject basicDBObject = new BasicDBObject();
+    //     // basicDBObject.put("taskName","12312312312312312");
+    //     // Query q = new BasicQuery(basicDBObject.toJson());
+    //     // Task1 one = mongoTemplate.findOne(q, Task1.class);
+    //     // System.out.println(one);
+    // }
     @Test
     public void test(){
-        DataModel dataModel = new DataModel();
-        dataModel.setSlot(2);
-        mongoTemplate.save(dataModel);
-        List<DataModel> all = mongoTemplate.findAll(DataModel.class);
-        all.stream().forEach(System.out::println);
-        DeleteResult slot = mongoTemplate.remove(new Query(Criteria.where("slot").gt(0)), DataModel.class);
-        System.out.println(slot.getDeletedCount());
-        List<DataModel> all1 = mongoTemplate.findAll(DataModel.class);
-        all1.stream().forEach(System.out::println);
-        // BasicDBObject basicDBObject = new BasicDBObject();
-        // basicDBObject.put("taskName","12312312312312312");
-        // Query q = new BasicQuery(basicDBObject.toJson());
-        // Task1 one = mongoTemplate.findOne(q, Task1.class);
-        // System.out.println(one);
+      int arr[] = {8,11,1,9,10,22,30,4};
+      quickSort(arr,0,arr.length-1);
+        for (int i : arr) {
+            System.out.println(i);
+        }
+    }
+    public void quickSort(int arr[] ,int left ,int right){
+        int i = left;
+        int j = right;
+        if(left > right){
+           return;
+        }
+        int temp = arr[right];
+        while(i < j){
+
+            while (temp >= arr[i]  && i < j){
+                 i++;
+            }
+            while (temp <= arr[j] && i < j){
+                j--;
+            }
+            if(i < j){
+                int t = arr[i];
+                arr[i] = arr[j];
+                arr[j] = t;
+            }
+
+        }
+        // if(){
+        //
+        // }
+            arr[right] = arr[i];
+            arr[i] = temp;
+
+        //
+        quickSort(arr,left,i - 1);
+        quickSort(arr,i + 1,right);
     }
     // @Autowired
     // TimeWheel timeWheel;
@@ -107,10 +138,6 @@ class CircularApplicationTests {
     //     }
     //
     // }
-    @Test
-    public void a(){
-        System.out.println(3618 % 3600);
-        System.out.println(3618 / 3600);
-    }
+
 
 }

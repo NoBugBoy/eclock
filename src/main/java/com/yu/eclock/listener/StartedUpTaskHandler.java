@@ -33,30 +33,19 @@ public class StartedUpTaskHandler implements ApplicationListener<ApplicationStar
         String[] beanNamesForType = applicationStartedEvent.getApplicationContext().getBeanNamesForType(
             AbstractTask.class);
         if(timeWheelStartConfig.isEnabled()){
-            Persistence persistence = PersistenceFactory.getPersistence(
-                timeWheelStartConfig.getPersistence().getName());
-            if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
-            List<DataModel> dataModels = persistence.get();
-            LOGGER.info("fix not done task ...");
-            final long appStartTime = System.currentTimeMillis();
-            dataModels.parallelStream()
-                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
-                .forEach(dataModel -> timeWheel.addAndFixTask(dataModel,appStartTime));
-            // if(beanNamesForType.length > 0){
-            //     LOGGER.debug("The automatic tasks:");
-            //     for (String s : beanNamesForType) {
-            //         Object bean = applicationStartedEvent.getApplicationContext().getBean(s);
-            //         AbstractTask<?> task = (AbstractTask<?>)bean;
-            //         if(task.isStartedUp()){
-            //             task.joinTimeWheel();
-            //         }
-            //         LOGGER.debug("| task name : {} |",task.getTaskName());
-            //         LOGGER.debug("| cycle time : {} s |",task.getSeconds());
-            //         LOGGER.debug("--------------------");
-            //     }
-            // }
+            if(beanNamesForType.length > 0){
+                LOGGER.debug("The automatic tasks:");
+                for (String s : beanNamesForType) {
+                    Object bean = applicationStartedEvent.getApplicationContext().getBean(s);
+                    AbstractTask<?> task = (AbstractTask<?>)bean;
+                    if(task.isStartedUp()){
+                        task.joinTimeWheel();
+                    }
+                    LOGGER.debug("| task name : {} |",task.getTaskName());
+                    LOGGER.debug("| cycle time : {} s |",task.getSeconds());
+                    LOGGER.debug("--------------------");
+                }
+            }
         }
-
-
     }
 }

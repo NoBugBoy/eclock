@@ -3,18 +3,27 @@ package com.yu.eclock.config;
 import com.yu.eclock.core.PrintBanner;
 import com.yu.eclock.core.TimeWheel;
 import com.yu.eclock.core.TimeWheelStartHandler;
+import com.yu.eclock.exception.PersistenceInstanceException;
 import com.yu.eclock.listener.StartedUpTaskHandler;
+import com.yu.eclock.persistence.DataModel;
+import com.yu.eclock.persistence.Persistence;
+import com.yu.eclock.persistence.PersistenceFactory;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +83,22 @@ public class TimeWheelConfig {
         threadPoolExecutor.execute(timeWheelStartHandler);
         LOGGER.info("eternal-clock started ...");
         return timeWheelStartHandler;
+    }
+    @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
+    @Bean
+    public ApplicationRunner applicationRunner(){
+        return args -> {
+            Persistence persistence = PersistenceFactory.getPersistence(
+                timeWheelStartConfig.getPersistence().getTypeName());
+            if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
+            List<DataModel> dataModels = persistence.get();
+            LOGGER.info("fix not done task ...");
+            final long appStartTime = System.currentTimeMillis();
+            dataModels.parallelStream()
+                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
+                .filter(dataModel -> !dataModel.isLoopTask())
+                .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
+        };
     }
     //-------
     // @Bean

@@ -1,6 +1,7 @@
 package com.yu.eclock.core;
 
 import com.yu.eclock.config.TimeWheelStartConfig;
+import com.yu.eclock.enums.PersistenceEnum;
 import com.yu.eclock.enums.PersistenceStrategyEnum;
 import com.yu.eclock.exception.FixTaskException;
 import com.yu.eclock.exception.PersistenceNameException;
@@ -58,7 +59,7 @@ public class TimeWheel {
      * @return boolean persistence
      */
     public boolean isPersistence() { return timeWheelStartConfig.getPersistence().isEnabled(); }
-    public String getPersistenceName(){return timeWheelStartConfig.getPersistence().getName(); }
+    public String getPersistenceName(){return timeWheelStartConfig.getPersistence().getTypeName(); }
 
     /**
      * @return 获取当前solt中所有的任务
@@ -85,7 +86,8 @@ public class TimeWheel {
                 if (lazyInit) lazyInit(slot);
                 task.setSlotAndRounds( slot,1);
             }
-            if(isPersistence()){
+            //循环任务持久化意义不大
+            if(isPersistence() && task instanceof DefaultTask<?>){
                 persistenceAdd(task);
             }
             this.tasks[slot].add(task);
@@ -98,6 +100,16 @@ public class TimeWheel {
         }
 
     }
+    public String getStrategy(){
+        TimeWheelStartConfig.Persistence persistence = timeWheelStartConfig.getPersistence();
+        if(PersistenceEnum.MONGO.name().equalsIgnoreCase(persistence.getTypeName())){
+            return persistence.getMongo().getStrategy();
+        }
+        if(PersistenceEnum.REDIS.name().equalsIgnoreCase(persistence.getTypeName())){
+            return persistence.getRedis().getStrategy();
+        }
+        return "";
+    }
     public final void addAndFixTask(DataModel dataModel,long startTime){
         long timestamp = dataModel.getTimestamp();
         int  rounds    = dataModel.getRounds();
@@ -107,7 +119,7 @@ public class TimeWheel {
         }else{
             time = dataModel.getSeconds() ;
         }
-        String strategy = timeWheelStartConfig.getPersistence().getStrategy();
+        String strategy = getStrategy();
         PersistenceStrategyEnum persistenceStrategyEnum;
         try {
             persistenceStrategyEnum = PersistenceStrategyEnum.valueOf(strategy.toUpperCase());
@@ -157,7 +169,7 @@ public class TimeWheel {
                         dataModel.getSeconds());
                     Class<?> superclass = aClass.getSuperclass().getSuperclass();
                     Field data = superclass.getDeclaredField("data");
-                    Field    uuid       = superclass.getDeclaredField("uuid");
+                    Field uuid = superclass.getDeclaredField("uuid");
                     data.setAccessible(true);
                     data.set(task,dataModel.getData());
                     uuid.setAccessible(true);
@@ -168,12 +180,6 @@ public class TimeWheel {
                 }
             }
             return null;
-            // Class<?>[] argsClass = new Class[3];
-            // argsClass[0] = this.getClass();
-            // argsClass[1] = String.class;
-            // argsClass[2] = Integer.class;
-            // Constructor<?> constructor = aClass.getConstructor(argsClass);
-            // return (AbstractTask<?>)constructor.newInstance(this, dataModel.getTaskName(), dataModel.getSeconds());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchFieldException e) {
             e.printStackTrace();
             return null;

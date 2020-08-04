@@ -8,16 +8,16 @@ import com.yu.eclock.utils.JsonUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
-public class RedisPersistence implements EclockPersistence<RedisTemplate<String,String>>, Persistence {
+public class RedisPersistence implements EclockPersistence<StringRedisTemplate>, Persistence {
     private final static Logger        LOGGER = LoggerFactory.getLogger(RedisPersistence.class);
     private final        StringRedisTemplate redisTemplate;
     public RedisPersistence(String dbString,String dbName,int port,String password){
@@ -26,8 +26,9 @@ public class RedisPersistence implements EclockPersistence<RedisTemplate<String,
         if(Strings.isNotBlank(password)){
             redisStandaloneConfiguration.setPassword(password.toCharArray());
         }
-        RedisConnectionFactory redisConnectionFactory = new LettuceConnectionFactory(redisStandaloneConfiguration);
-        this.redisTemplate = new StringRedisTemplate(redisConnectionFactory);
+
+        JedisConnectionFactory lettuceConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration);
+        this.redisTemplate = new StringRedisTemplate(lettuceConnectionFactory);
     }
 
     @Override
@@ -52,14 +53,13 @@ public class RedisPersistence implements EclockPersistence<RedisTemplate<String,
 
     @Override
     public List<DataModel> get() {
-        // String query = (String)key;
-        // Boolean exist = redisTemplate.hasKey("eclock");
-        // if(exist){
-        //     return redisTemplate.opsForHash().values("eclock").stream()
-        //         .filter(Objects::nonNull)
-        //         .map(t -> (DataModel)t).collect(
-        //             Collectors.toList());
-        // }
+        Boolean exist = redisTemplate.hasKey("eclock");
+        if(exist){
+            return redisTemplate.opsForHash().values("eclock").stream()
+                .filter(Objects::nonNull)
+                .map(t -> (DataModel)t).collect(
+                    Collectors.toList());
+        }
         return Collections.emptyList();
     }
 

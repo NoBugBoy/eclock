@@ -84,22 +84,22 @@ public class TimeWheelConfig {
         LOGGER.info("eternal-clock started ...");
         return timeWheelStartHandler;
     }
-    @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
-    @Bean
-    public ApplicationRunner applicationRunner(){
-        return args -> {
-            Persistence persistence = PersistenceFactory.getPersistence(
-                timeWheelStartConfig.getPersistence().getTypeName());
-            if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
-            List<DataModel> dataModels = persistence.get();
-            LOGGER.info("fix not done task ...");
-            final long appStartTime = System.currentTimeMillis();
-            dataModels.parallelStream()
-                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
-                .filter(dataModel -> !dataModel.isLoopTask())
-                .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
-        };
-    }
+    // @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
+    // @Bean
+    // public ApplicationRunner applicationRunner(){
+        // return args -> {
+        //     Persistence persistence = PersistenceFactory.getPersistence(
+        //         timeWheelStartConfig.getPersistence().getTypeName());
+        //     if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
+        //     List<DataModel> dataModels = persistence.get();
+        //     LOGGER.info("fix not done task ...");
+        //     final long appStartTime = System.currentTimeMillis();
+        //     dataModels.parallelStream()
+        //         .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
+        //         .filter(dataModel -> !dataModel.isLoopTask())
+        //         .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
+        //  };
+    // }
     //-------
     // @Bean
     // @ConditionalOnMissingBean

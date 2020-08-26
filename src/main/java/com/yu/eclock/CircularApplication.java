@@ -8,6 +8,9 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Arrays;
+import java.util.List;
+
 @SpringBootApplication(exclude = {MongoAutoConfiguration.class, RedisAutoConfiguration.class})
 public class CircularApplication {
     public static void main(String[] args) {
@@ -15,7 +18,8 @@ public class CircularApplication {
         TimeWheel bean = run.getBean(TimeWheel.class);
         for (int i = 0; i < 10; i++) {
             Task1 task = new Task1(bean,"test"+i,10+(i * 10));
-            task.setTaskData("1231231");
+            List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, i);
+            task.setTaskData(list);
             task.joinTimeWheel();
         }
     }

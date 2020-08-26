@@ -1,19 +1,12 @@
 package com.yu.eclock.persistence.mongo;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClientFactory;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
-import com.yu.eclock.core.AbstractTask;
 import com.yu.eclock.exception.PersistenceInstanceException;
 import com.yu.eclock.persistence.DataModel;
 import com.yu.eclock.persistence.EclockPersistence;
 import com.yu.eclock.persistence.Persistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
 import org.springframework.data.mongodb.core.query.Criteria;

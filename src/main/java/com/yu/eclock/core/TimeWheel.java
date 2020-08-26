@@ -256,7 +256,9 @@ public class TimeWheel {
             Persistence persistence = PersistenceFactory.getPersistence(getPersistenceName());
             assert persistence != null;
             persistence.remove(task.getId());
-            LOGGER.info("移除{}位置上的任务 >>>>> {}",slot,task.getTaskName());
+            if(LOGGER.isDebugEnabled()){
+                LOGGER.debug("移除{}位置上的任务 >>>>> {}",slot,task.getTaskName());
+            }
         }
         this.tasks[slot].remove(task);
 

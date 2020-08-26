@@ -1,5 +1,6 @@
 package com.yu.eclock.persistence.redis;
 
+import com.alibaba.fastjson.JSONObject;
 import com.yu.eclock.exception.PersistenceInstanceException;
 import com.yu.eclock.persistence.DataModel;
 import com.yu.eclock.persistence.EclockPersistence;
@@ -57,8 +58,8 @@ public class RedisPersistence implements EclockPersistence<StringRedisTemplate>,
         if(exist){
             return redisTemplate.opsForHash().values("eclock").stream()
                 .filter(Objects::nonNull)
-                .map(t -> (DataModel)t).collect(
-                    Collectors.toList());
+                .map(t -> JSONObject.parseObject((String)t,DataModel.class))
+                .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }

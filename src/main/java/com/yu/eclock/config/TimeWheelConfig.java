@@ -19,8 +19,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
@@ -84,29 +82,22 @@ public class TimeWheelConfig {
         LOGGER.info("eternal-clock started ...");
         return timeWheelStartHandler;
     }
-    // @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
-    // @Bean
-    // public ApplicationRunner applicationRunner(){
-        // return args -> {
-        //     Persistence persistence = PersistenceFactory.getPersistence(
-        //         timeWheelStartConfig.getPersistence().getTypeName());
-        //     if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
-        //     List<DataModel> dataModels = persistence.get();
-        //     LOGGER.info("fix not done task ...");
-        //     final long appStartTime = System.currentTimeMillis();
-        //     dataModels.parallelStream()
-        //         .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
-        //         .filter(dataModel -> !dataModel.isLoopTask())
-        //         .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
-        //  };
-    // }
-    //-------
-    // @Bean
-    // @ConditionalOnMissingBean
-    // @ConditionalOnProperty(prefix = "eternal.clock.persistence", value = "name", havingValue = "mongo")
-    // public MongoTemplate mongoPersistence(){
-    //     MongoPersistence mongoPersistence = new MongoPersistence(timeWheelStartConfig.getPersistence().getDbUrl(),timeWheelStartConfig.getPersistence().getDbName());
-    //     return mongoPersistence.getTemplate();
-    // }
+    @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
+    @Bean
+    public ApplicationRunner applicationRunner(){
+        return args -> {
+            Persistence persistence = PersistenceFactory.getPersistence(
+                timeWheelStartConfig.getPersistence().getTypeName());
+            if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
+            List<DataModel> dataModels = persistence.get();
+            LOGGER.info("fix history task ...");
+            final long appStartTime = System.currentTimeMillis();
+            dataModels.parallelStream()
+                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
+                .filter(dataModel -> !dataModel.isLoopTask())
+                .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
+         };
+    }
+
 
 }

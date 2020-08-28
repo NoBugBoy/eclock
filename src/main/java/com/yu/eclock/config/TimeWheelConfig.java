@@ -73,7 +73,7 @@ public class TimeWheelConfig {
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS, new SynchronousQueue<>(),
             r -> {
                 Thread t= new Thread(r);
-                // if you want debug this project please set Daemon false
+                // if you want debug current project please set Daemon false
                 t.setDaemon(false);
                 t.setName("eclock");
                 return t;

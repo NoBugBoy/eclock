@@ -1,18 +1,28 @@
 package com.yu.eclock.core;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class LoopTask<T> extends AbstractTask<T> implements TimeWheelLoopTask{
-    public LoopTask(){}
+public abstract class LoopTask extends AbstractTask<Void> implements TimeWheelLoopTask {
+
     public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds) {
         super(timeWheel,taskName,seconds,null,false,true);
     }
-    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds,T data) {
-        super(timeWheel,taskName,seconds,data,false,true);
+    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds ,boolean rollback) {
+        super(timeWheel, taskName,seconds,null,rollback,true);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        // empty method
 
     }
-    public LoopTask(TimeWheel timeWheel,String taskName,Integer seconds,T data ,boolean rollback) {
-        super(timeWheel, taskName,seconds,data,rollback,true);
+
+    @Override
+    protected synchronized void setSlotAndRounds(int slot, int rounds) {
+        // empty method
     }
 
     // -1 无限 默认为1

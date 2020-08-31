@@ -1,8 +1,6 @@
-package com.yu.eclock.config;
+package com.yu.eclock.core;
 
-import com.yu.eclock.core.PrintBanner;
-import com.yu.eclock.core.TimeWheel;
-import com.yu.eclock.core.TimeWheelStartHandler;
+import com.yu.eclock.config.TimeWheelStartConfig;
 import com.yu.eclock.exception.PersistenceInstanceException;
 import com.yu.eclock.listener.StartedUpTaskHandler;
 import com.yu.eclock.persistence.DataModel;
@@ -11,44 +9,44 @@ import com.yu.eclock.persistence.PersistenceFactory;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 @Configuration
 @ConditionalOnClass({TimeWheelStartConfig.class})
 @EnableConfigurationProperties(TimeWheelStartConfig.class)
 public class TimeWheelConfig {
-    @Value("${version}")
-    private String version;
     private static final Logger LOGGER = LoggerFactory.getLogger(TimeWheelConfig.class);
     private final  TimeWheelStartConfig timeWheelStartConfig;
 
     public TimeWheelConfig(TimeWheelStartConfig timeWheelStartConfig) {
         this.timeWheelStartConfig = timeWheelStartConfig;
     }
-
     @Bean
-    @ConditionalOnMissingBean
+    public PersistenceFactory persistenceFactory(){
+        return new PersistenceFactory(timeWheelStartConfig);
+    }
+    @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE - 1)
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
     public TimeWheel timeWheel(){
-        return new TimeWheel(false,timeWheelStartConfig);
+        return new TimeWheel(false,timeWheelStartConfig,persistenceFactory());
     }
 
     @Bean(name = "eclock-pool")
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
-    public ThreadPoolTaskExecutor wheelPoll(){
+    public ThreadPoolTaskExecutor wheelPool(){
         LOGGER.info("eclock-pool init ...");
         ThreadPoolTaskExecutor taskPool = new ThreadPoolTaskExecutor();
         taskPool.setCorePoolSize(
@@ -68,13 +66,13 @@ public class TimeWheelConfig {
     @ConditionalOnProperty(prefix = "eternal.clock", value = "enabled", havingValue = "true")
     @Bean
     public TimeWheelStartHandler timeWheelStartHandler(){
-        PrintBanner.print(version);
-        final TimeWheelStartHandler timeWheelStartHandler = new TimeWheelStartHandler(timeWheel(),wheelPoll(),timeWheelStartConfig);
+        PrintBanner.print(timeWheelStartConfig.getVersion());
+        final TimeWheelStartHandler timeWheelStartHandler = new TimeWheelStartHandler(timeWheel(),wheelPool(),timeWheelStartConfig);
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS, new SynchronousQueue<>(),
             r -> {
                 Thread t= new Thread(r);
                 // if you want debug current project please set Daemon false
-                t.setDaemon(false);
+                t.setDaemon(true);
                 t.setName("eclock");
                 return t;
             });
@@ -86,17 +84,20 @@ public class TimeWheelConfig {
     @Bean
     public ApplicationRunner applicationRunner(){
         return args -> {
-            Persistence persistence = PersistenceFactory.getPersistence(
-                timeWheelStartConfig.getPersistence().getTypeName());
-            if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
-            List<DataModel> dataModels = persistence.get();
-            LOGGER.info("fix history task ...");
-            final long appStartTime = System.currentTimeMillis();
-            dataModels.parallelStream()
-                .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
-                .filter(dataModel -> !dataModel.isLoopTask())
-                .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
-         };
+            if(timeWheelStartConfig.getPersistence().isEnabled()){
+                Persistence persistence = persistenceFactory().getPersistence(
+                    timeWheelStartConfig.getPersistence().getTypeName());
+                if(persistence == null) throw new PersistenceInstanceException("persistence instance exception");
+                List<DataModel> dataModels = persistence.get();
+                LOGGER.info("fix history task ...");
+                final long appStartTime = System.currentTimeMillis();
+                dataModels.parallelStream()
+                    .filter(dataModel -> Strings.isNotBlank(dataModel.getClazz()))
+                    .filter(dataModel -> !dataModel.isLoopTask())
+                    .forEach(dataModel -> timeWheel().addAndFixTask(dataModel,appStartTime));
+            }
+        };
+
     }
 
 

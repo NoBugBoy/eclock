@@ -6,51 +6,54 @@ import com.yu.eclock.exception.TaskExcitingException;
 import com.yu.eclock.persistence.TaskDataConvert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataConvert<T> {
+public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataConvert<T>, ApplicationContextAware {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTask.class);
     private final String uuid;
     private volatile T data;
-    private boolean rollback;
+    private boolean retry;
     private volatile boolean exception;
     private AtomicInteger retryCount;
     private final AtomicInteger count;
     //Disable instruction reordering
     private volatile boolean done;
     private final int seconds;
-    private final TimeWheel timeWheel;
+    private TimeWheel timeWheel;
     private final String taskName;
-    private volatile boolean startedUp;
+    private volatile boolean startedUp = true;
     private final boolean isLoopTask;
     private volatile int slot;
     private volatile int rounds;
-    public AbstractTask(){
-        this.rollback = false;
+    public AbstractTask(TimeWheel timeWheel){
+        this.retry = false;
         this.exception = false;
         this.done = false;
         this.uuid = UUID.randomUUID().toString().replace("-","");
+        this.timeWheel = timeWheel;
         //lazy load
-        if(rollback){ this.retryCount = new AtomicInteger(0); }
+        if(retry){ this.retryCount = new AtomicInteger(0); }
         this.count = new AtomicInteger(0);
-        this.timeWheel = null;
         this.seconds = 0;
         this.taskName = null;
         this.isLoopTask = false;
     }
-    public AbstractTask(TimeWheel timeWheel,String taskName,int seconds,T data,boolean rollback,boolean isLoopTask){
-        this.rollback = rollback;
+    public AbstractTask(TimeWheel timeWheel,String taskName,int seconds,T data,boolean retry,boolean isLoopTask){
+        this.retry = retry;
+        this.timeWheel=timeWheel;
         this.exception = false;
         this.done = false;
         this.uuid = UUID.randomUUID().toString().replace("-","");
         //lazy load
-        if(rollback){ this.retryCount = new AtomicInteger(0); }
+        if(retry){ this.retryCount = new AtomicInteger(0); }
         this.count = new AtomicInteger(0);
-        this.timeWheel = timeWheel;
         this.seconds = seconds;
         this.taskName = taskName;
         this.isLoopTask = isLoopTask;
@@ -62,14 +65,14 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
     public final void setTaskData(T data){ this.data = data; }
     public final String getTaskName() { return taskName; }
     public final boolean isDone(){ return this.done; }
-    public final void setRollback(boolean rollback) { this.rollback = rollback; }
-    public boolean isRollback() { return rollback; }
+    public final void setRollback(boolean rollback) { this.retry = rollback; }
+    public boolean isRollback() { return retry; }
     public AtomicInteger getRetryCount() { return retryCount; }
     public int getSlot() { return slot; }
     public int getRounds() { return rounds; }
 
     public final void setRetryCount(int retryCount) {
-        if(rollback){
+        if(retry){
             if (this.retryCount == null){
                 this.retryCount = new AtomicInteger(0);
             }
@@ -88,7 +91,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
     public final synchronized void joinTimeWheel(){
         if(count.get() == 0){
             if(isLoopTask ){
-                LoopTask<T> tLoopTask = (LoopTask<T>)this;
+                LoopTask tLoopTask = (LoopTask)this;
                 if(!tLoopTask.isEnableLoop()){
                     return;
                 }
@@ -103,11 +106,11 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
                     this.done = false;
                     timeWheel.addTask(this);
                 }else{
-                     LOGGER.error("If you want to join repeatedly, please unlock first, task name is {}",getTaskName());
+                    LOGGER.error("If you want to join repeatedly, please unlock first, task name is {}",getTaskName());
                     // throw new TaskLockException(""); break current task
                 }
             }else{
-                LOGGER.error("Loop task join repeatedly {}",getTaskName());
+                LOGGER.warn("Loop task Prohibit duplicate calls {}",getTaskName());
                 // throw new TaskDoneException("");
             }
         }
@@ -130,7 +133,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
             throw new TaskExcitingException(e.getMessage());
         }finally {
             count.incrementAndGet();
-            if(exception && rollback && checkRollbackCount()){
+            if(exception && retry && checkRollbackCount()){
                 LOGGER.warn("Trigger exception to attempt rollback ， task name = {}",taskName);
                 this.exception = false;
                 LOGGER.warn("rollback started...");
@@ -144,7 +147,7 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
                 // help gc
                 this.data = null;
                 if(isLoopTask){
-                    LoopTask<T> tLoopTask = (LoopTask<T>)this;
+                    LoopTask tLoopTask = (LoopTask)this;
                     tLoopTask.setEnableLoop(false);
                     doFinally();
                 }
@@ -173,8 +176,13 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
         timeWheel.removeCurrentTask(slot,this);
     }
 
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        timeWheel = applicationContext.getBean(TimeWheel.class);
+    }
+
     private void doAfter(){
-        LoopTask<T> tLoopTask = (LoopTask<T>) this;
+        LoopTask tLoopTask = (LoopTask) this;
         if(tLoopTask.isEnableLoop() && isDone()){
             if(tLoopTask.isInfiniteCycle()){
                 this.done = false;
@@ -195,10 +203,14 @@ public abstract class AbstractTask<T>  implements Runnable,CallBack<T>,TaskDataC
         timeWheel.addTask(this);
     }
     private  void beforeRunCheck(final Object data){
-        Optional.ofNullable(data).orElseThrow(() -> new DataNullException("task data not found , please setTaskData"));
-        if(isDone()){
-            throw new TaskDoneException("The current task has been completed! Waiting for destruction");
+        if(!isLoopTask){
+            Optional.ofNullable(data).orElseThrow(() -> new DataNullException("task data not found , please setTaskData"));
+            LOGGER.error("this task is done "+ this.taskName);
+            if(isDone()){
+                throw new TaskDoneException("The current task has been completed! Waiting for destruction");
+            }
         }
+
     }
     private  boolean checkRollbackCount(){
         return retryCount.getAndDecrement() > 1;

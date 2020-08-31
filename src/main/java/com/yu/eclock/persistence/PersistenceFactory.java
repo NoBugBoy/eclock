@@ -7,25 +7,19 @@ import com.yu.eclock.persistence.mongo.MongoPersistence;
 import com.yu.eclock.persistence.redis.RedisPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Component;
-@Component
-@EnableConfigurationProperties(TimeWheelStartConfig.class)
-public class PersistenceFactory {
-    private static TimeWheelStartConfig timeWheelStartConfig;
 
-    @Autowired
-    public void TimeWheelStartConfig(TimeWheelStartConfig twsc) {
-        timeWheelStartConfig = twsc;
+
+public class PersistenceFactory {
+    private  TimeWheelStartConfig timeWheelStartConfig;
+    public PersistenceFactory(TimeWheelStartConfig timeWheelStartConfig) {
+        this.timeWheelStartConfig = timeWheelStartConfig;
     }
 
     private static final Logger           LOGGER = LoggerFactory.getLogger(PersistenceFactory.class);
     private final static Object           lock   = new Object();
     private static       MongoPersistence mongoPersistence;
     private static       RedisPersistence redisPersistence;
-
-    public static Persistence getPersistence(String name) {
+    public  Persistence getPersistence(String name) {
         final PersistenceEnum persistenceEnum;
         try {
             persistenceEnum = PersistenceEnum.valueOf(name.toUpperCase());

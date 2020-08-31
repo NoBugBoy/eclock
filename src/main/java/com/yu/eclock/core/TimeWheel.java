@@ -32,8 +32,10 @@ public class TimeWheel {
     private final TimeWheelStartConfig timeWheelStartConfig;
     private final AtomicInteger currentSlot = new AtomicInteger(0) ;
     private final ReentrantLock al = new ReentrantLock();
-    private final ReentrantLock rl = new ReentrantLock();
-    public TimeWheel(boolean lazyInit,TimeWheelStartConfig timeWheelStartConfig){
+    private final ReentrantLock      rl = new ReentrantLock();
+    private       PersistenceFactory persistenceFactory;
+    public TimeWheel(boolean lazyInit,TimeWheelStartConfig timeWheelStartConfig,PersistenceFactory persistenceFactory){
+        this.persistenceFactory = persistenceFactory;
         tasks = new CopyOnWriteArraySet[timeSlot];
         this.lazyInit = lazyInit;
         this.timeWheelStartConfig = timeWheelStartConfig;
@@ -45,33 +47,33 @@ public class TimeWheel {
     /**
      * @return 获取当前solt位置
      */
-    public int getCurrentSlotPoint(){ return currentSlot.get(); }
+    protected int getCurrentSlotPoint(){ return currentSlot.get(); }
 
     /**
      * 如果是懒加载方式，将不会完全实例化时间轮的slot
      * 建议数量少，覆盖面小的任务时启用
      * @return boolean lazyInit
      */
-    public boolean isLazyInit(){ return lazyInit; }
+    protected boolean isLazyInit(){ return lazyInit; }
 
     /**
      * 是否持久化任务
      * @return boolean persistence
      */
-    public boolean isPersistence() { return timeWheelStartConfig.getPersistence().isEnabled(); }
-    public String getPersistenceName(){return timeWheelStartConfig.getPersistence().getTypeName(); }
+    protected boolean isPersistence() { return timeWheelStartConfig.getPersistence().isEnabled(); }
+    protected String getPersistenceName(){return timeWheelStartConfig.getPersistence().getTypeName(); }
 
     /**
      * @return 获取当前solt中所有的任务
      */
-    public Set<AbstractTask<?>> getTaskBySlotPoint(){ return this.tasks[currentSlot.get() - 1]; }
+    protected Set<AbstractTask<?>> getTaskBySlotPoint(){ return this.tasks[currentSlot.get() - 1]; }
 
     /**
      * 添加一个任务到轮盘，下次执行的时间由当前slot指针控制
      * 如果超过轮盘最大周期3600，则计算下次执行圈次
      * @param task 执行的自定义任务
      */
-    public final void addTask(AbstractTask<?> task){
+    protected final void addTask(AbstractTask<?> task){
         int seconds = task.getSeconds();
         if(seconds < 0 || task.isDone()) return;
         try {
@@ -100,7 +102,7 @@ public class TimeWheel {
         }
 
     }
-    public String getStrategy(){
+    protected String getStrategy(){
         TimeWheelStartConfig.Persistence persistence = timeWheelStartConfig.getPersistence();
         if(PersistenceEnum.MONGO.name().equalsIgnoreCase(persistence.getTypeName())){
             return persistence.getMongo().getStrategy();
@@ -110,7 +112,7 @@ public class TimeWheel {
         }
         return "";
     }
-    public final void addAndFixTask(DataModel dataModel,long startTime){
+    public final void addAndFixTask(DataModel dataModel, long startTime){
         long timestamp = dataModel.getTimestamp();
         int  rounds    = dataModel.getRounds();
         long time;
@@ -132,34 +134,33 @@ public class TimeWheel {
             if (persistenceStrategyEnum != PersistenceStrategyEnum.DISCARD_ALL) {
                 AbstractTask<?> task = buildClass(dataModel);
                 if (task  == null) throw new FixTaskException("Resume task exception");
-                PersistenceFactory.getPersistence(getPersistenceName()).remove(task.getId());
+                persistenceFactory.getPersistence(getPersistenceName()).remove(task.getId());
                 addTask(task);
             }
-            PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+            persistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
         }else {
             switch (persistenceStrategyEnum){
-                case DISCARD:
-                    PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
                 case NOW:
                     AbstractTask<?> now = buildClass(dataModel);
-                    PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+                    persistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
                     if (now  == null) throw new FixTaskException("Resume task exception");
                     now.run();
+                    break;
                 case INIT:
                     AbstractTask<?> init = buildClass(dataModel);
-                    PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+                    persistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
                     if (init  == null) throw new FixTaskException("Resume task exception");
                     init.joinTimeWheel();
-                case DISCARD_ALL:
-                    PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+                    break;
                 default:
-                    PersistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+                    persistenceFactory.getPersistence(getPersistenceName()).remove(dataModel.getTaskId());
+                    break;
             }
             //判断是否需要重新加入
             LOGGER.debug(dataModel.getTaskId() + "已经过期");
         }
     }
-    private AbstractTask<?> buildClass(DataModel dataModel){
+    protected AbstractTask<?> buildClass(DataModel dataModel){
         try {
             Class<?> aClass = Class.forName(dataModel.getClazz());
             Constructor<?>[] constructors = aClass.getConstructors();
@@ -186,20 +187,20 @@ public class TimeWheel {
         }
     }
 
-    public void persistenceAdd(AbstractTask<?> task){
+    protected void persistenceAdd(AbstractTask<?> task){
         if(Strings.isBlank(getPersistenceName())){
             throw new PersistenceNameException("persistence name can not be null or '' ");
         }
 
         DataModel convert = task.convert();
-        PersistenceFactory.getPersistence(getPersistenceName()).add(convert);
+        persistenceFactory.getPersistence(getPersistenceName()).add(convert);
     }
     /**
      * 移动slot指针，超过最大周期，将从头执行
      * 首尾相连
      * @return 当前slot位置
      */
-    public int moveCurrentSlotPoint(){
+    protected int moveCurrentSlotPoint(){
         if(currentSlot.get() >=  timeSlot - 1){
             currentSlot.set(0);
         }
@@ -210,7 +211,7 @@ public class TimeWheel {
      * 懒加载
      * @param slot 指针位置
      */
-    private void lazyInit(int slot){
+    protected void lazyInit(int slot){
         if (tasks[slot] == null){
             tasks[slot] = new CopyOnWriteArraySet<>();
         }
@@ -221,7 +222,7 @@ public class TimeWheel {
      * @param slot 当前位置
      * @param task 任务对象
      */
-    public void removeTask(int slot , AbstractTask<?> task){
+    protected void removeTask(int slot , AbstractTask<?> task){
         try{
             rl.lock();
             if(null == task){
@@ -248,12 +249,12 @@ public class TimeWheel {
      * @param slot 位置
      * @param task 任务对象
      */
-    public void removeCurrentTask(int slot,AbstractTask<?> task){
+    protected void removeCurrentTask(int slot,AbstractTask<?> task){
         if(isPersistence()){
             if(Strings.isBlank(getPersistenceName())){
                 throw new PersistenceNameException("persistence name can not be null or '' ");
             }
-            Persistence persistence = PersistenceFactory.getPersistence(getPersistenceName());
+            Persistence persistence = persistenceFactory.getPersistence(getPersistenceName());
             assert persistence != null;
             persistence.remove(task.getId());
             if(LOGGER.isDebugEnabled()){
@@ -267,7 +268,7 @@ public class TimeWheel {
     /**
      * 默认初始化
      */
-    private synchronized void init(){
+    protected synchronized void init(){
         for (int i = 0; i < tasks.length; i++) {
             tasks[i] = new CopyOnWriteArraySet<>();
         }

@@ -11,6 +11,11 @@
 3. AbstractTask，任务的实体，控制着整个任务的执行逻辑，项目中通过继承defaultTask和LoopTask两种任务来实现调度，并提供回调，回滚，重试等机制
 4. 使用时需开启配置 eternal.clock.enabled=true
 
+#### 配置
+```properties
+@SpringBootApplication(exclude = {MongoAutoConfiguration.class, RedisAutoConfiguration.class})
+```
+
 #### defaultTask
 
 1. 单次任务

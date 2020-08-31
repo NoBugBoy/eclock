@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "eternal.clock")
 public class TimeWheelStartConfig {
     private volatile boolean enabled = false;
-    private Threads threads;
+    private String version = "0.0.5";
+    private Threads threads = new Threads();
     private Persistence persistence = new Persistence();
 
     public static class Threads{
@@ -125,9 +126,8 @@ public class TimeWheelStartConfig {
         }
     }
     public static class Persistence{
-        Persistence(){}
         private boolean enabled = false;
-        private String typeName = "mongo";
+        private String typeName = "mongo or redis";
         private Mongo mongo = new Mongo();
         private Redis redis = new Redis();
         public Mongo getMongo() {
@@ -180,6 +180,14 @@ public class TimeWheelStartConfig {
 
     public Persistence getPersistence() {
         return persistence;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public void setPersistence(Persistence persistence) {

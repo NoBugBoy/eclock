@@ -3,19 +3,14 @@ package com.yu.eclock.listener;
 import com.yu.eclock.config.TimeWheelStartConfig;
 import com.yu.eclock.core.AbstractTask;
 import com.yu.eclock.core.TimeWheel;
-import com.yu.eclock.exception.PersistenceInstanceException;
-import com.yu.eclock.persistence.DataModel;
-import com.yu.eclock.persistence.Persistence;
-import com.yu.eclock.persistence.PersistenceFactory;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class StartedUpTaskHandler implements ApplicationListener<ApplicationStartedEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartedUpTaskHandler.class);
     private final TimeWheel timeWheel;

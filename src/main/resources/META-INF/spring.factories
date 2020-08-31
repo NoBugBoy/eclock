@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.yu.eclock.config.TimeWheelConfig
+  com.yu.eclock.core.TimeWheelConfig
